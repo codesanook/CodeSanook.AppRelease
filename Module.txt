@@ -1,0 +1,10 @@
+﻿Name: CodeSanook.AppRelease
+AntiForgery: enabled
+Author: Aaron
+Website: http://codesanook.com
+Version: 1.0
+OrchardVersion: 1.0
+Description: Description for the module
+Features:
+    CodeSanook.AppRelease:
+        Description: A module for managing Apple Enterprise program release
