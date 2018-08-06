@@ -1,0 +1,13 @@
+﻿
+@using CodeSanook.Configuration.Models;
+@using CodeSanook.AppRelease.Models;
+@model AppReleaseRecord[]
+
+@{
+    Layout.Title = T("Settings").ToString();
+    var setting = ViewBag.Setting as ModuleSettingPart;
+}
+<h2>@T("App releases")</h2>
+
+
+@Html.Link("download", "url");
