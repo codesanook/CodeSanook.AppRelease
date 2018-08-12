@@ -1,6 +1,9 @@
-﻿<div>
+﻿@{
+    //Register if style.css is in Styles folder
+    Style.Include("app-download.css").AtHead();
+}
 
-<a href="@Model.Url">download @Model.Title</a>
-
-<a href="">Android</a>
+<div class="download-link">
+    <a class="download-link__platform" href="@Model.Url">download @Model.Title</a>
+    <a class="download-link__platform" href="">Android</a>
 </div>
