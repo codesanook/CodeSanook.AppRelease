@@ -1,0 +1,15 @@
+﻿@using CodeSanook.AppRelease.Models
+@model AppDownloadPart
+
+<fieldset>
+  <legend>App download</legend>
+
+  <div class="editor-label">
+    @Html.LabelFor(model => model.BundleId)
+  </div>
+  <div class="editor-field">
+    @Html.TextBoxFor(model => model.BundleId)
+    @Html.ValidationMessageFor(model => model.BundleId)
+  </div>
+
+</fieldset>

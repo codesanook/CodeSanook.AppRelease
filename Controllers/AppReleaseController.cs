@@ -2,6 +2,8 @@
 using Amazon.S3;
 using Amazon.S3.Transfer;
 using CodeSanook.AppRelease.Models;
+using CodeSanook.AppRelease.ViewModels;
+using CodeSanook.Common.Web;
 using CodeSanook.Configuration.Models;
 using Orchard;
 using Orchard.ContentManagement;
@@ -9,6 +11,7 @@ using Orchard.Data;
 using Orchard.Localization;
 using Orchard.Logging;
 using Orchard.Mvc.AntiForgery;
+using Orchard.UI.Admin;
 using Orchard.UI.Notify;
 using System;
 using System.IO;
@@ -18,16 +21,19 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 namespace CodeSanook.AppRelease.Controllers
 {
-    public class AdminController : Controller
+    [Admin]
+    public class AppReleaseController : Controller
     {
         const string rootFolder = "app-releases";
         private static Regex versionNumberPattern = new Regex(@"^(?<major>\d+)\.(?<minor>\d{1,2})\.(?<patch>\d{1,2})$", RegexOptions.Compiled);
+        private static Regex replaceTitleNamePattern = new Regex(@"[\s\.]+", RegexOptions.Compiled);
 
         //https://semver.org/
         //MAJOR version when you make incompatible API changes,
         //MINOR version when you add functionality in a backwards-compatible manner, and
         //PATCH version when you make backwards-compatible bug fixes.
-        private readonly IRepository<AppReleaseRecord> repository;
+        private readonly IRepository<AppInfoRecord> appInfoRepository;
+        private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly IOrchardServices orchardService;
         private readonly ModuleSettingPart setting;
 
@@ -35,11 +41,13 @@ namespace CodeSanook.AppRelease.Controllers
         public ILogger Logger { get; set; }
         public Localizer T { get; set; }
 
-        public AdminController(
-            IRepository<AppReleaseRecord> repository,
+        public AppReleaseController(
+            IRepository<AppInfoRecord> appInfoRepository,
+            IRepository<AppReleaseRecord> appReleaseRepository,
             IOrchardServices orchardService)
         {
-            this.repository = repository;
+            this.appInfoRepository = appInfoRepository;
+            this.appReleaseRepository = appReleaseRepository;
             this.orchardService = orchardService;
             this.T = NullLocalizer.Instance;
             this.Logger = NullLogger.Instance;
@@ -49,24 +57,41 @@ namespace CodeSanook.AppRelease.Controllers
         public ActionResult Index()
         {
             ViewBag.Setting = this.setting;
-            var items = this.repository.Table.OrderByDescending(i=>i.VersionCode).ToArray();
+            var items = this.appReleaseRepository.Table.OrderByDescending(i => i.VersionCode).ToArray();
             return View(items);
         }
 
-        public ActionResult Add()
+        public ActionResult Create(int? appInfoId)
         {
-            return View();
+            if (!appInfoId.HasValue)
+            {
+                this.orchardService.Notifier.Error(T("No selected app for creating a new release."));
+                return RedirectToAction(nameof(AppInfoController.Index), MvcHelper.GetControllerName<AppInfoController>());
+            }
+
+            var viewModel = new AppReleaseCreateViewModel()
+            {
+                AppInfoId = appInfoId.Value
+            };
+
+            return View(viewModel);
         }
 
         [ValidateAntiForgeryTokenOrchard(true)]
         [HttpPost]
-        public async Task<ActionResult> Add(PostedFile postedFile)
+        public async Task<ActionResult> Create(AppReleaseCreateViewModel viewModel)
         {
-            var match = versionNumberPattern.Match(postedFile.VersionNumber);
+            if (!this.ModelState.IsValid)
+            {
+                return View(viewModel);
+            }
+
+            var match = versionNumberPattern.Match(viewModel.VersionNumber);
             if (!match.Success)
             {
-                this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
-                return RedirectToAction(nameof(Index));
+                this.orchardService.Notifier.Error(
+                    T($"Version number {viewModel.VersionNumber} is invalid, it must be major.minor.patch pattern."));
+                return View(viewModel);
             }
 
             var major = int.Parse(match.Groups["major"].Value);
@@ -74,9 +99,13 @@ namespace CodeSanook.AppRelease.Controllers
             var patch = int.Parse(match.Groups["patch"].Value);
             int versionCode = (int)(major * Math.Pow(10, 4) + minor * Math.Pow(10, 2) + patch);
 
-            var fileKey = CreateFileKey(postedFile.VersionNumber);
+            //todo prevent existing version
+
+            var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
+
+            var fileKey = CreateFileKey(viewModel, appInfo);
             using (var client = GetS3Client())
-            using (var inputStream = postedFile.File.InputStream)
+            using (var inputStream = viewModel.File.InputStream)
             {
                 var fileTransferUtility = new TransferUtility(client);
                 var uploadRequest = CreateFileUpload(inputStream, fileKey);
@@ -85,15 +114,16 @@ namespace CodeSanook.AppRelease.Controllers
 
             var appRelease = new AppReleaseRecord()
             {
-                VersionNumber = postedFile.VersionNumber,
+                VersionNumber = viewModel.VersionNumber,
                 VersionCode = versionCode,
                 CreatedUtc = DateTime.UtcNow,
                 FileKey = fileKey,
+                AppInfo = new AppInfoRecord() { Id = viewModel.AppInfoId }
             };
 
-            this.repository.Create(appRelease);
+            this.appReleaseRepository.Create(appRelease);
             this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
         }
 
         private AmazonS3Client GetS3Client()
@@ -122,11 +152,13 @@ namespace CodeSanook.AppRelease.Controllers
             }
         }
 
-        private string CreateFileKey(string versionNumber)
+        private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo)
         {
             var now = DateTime.UtcNow;
             var folder = $"{rootFolder}/{now:yyyy}/{now:MM}/{now:dd}";
-            var fileName = $"thailand-fls-{versionNumber}.ipa";
+
+            var title = replaceTitleNamePattern.Replace(appInfo.Title, "-").ToLower();
+            var fileName = $"{title}-{viewModel.VersionNumber}.ipa";
             return string.Format("{0}/{1}", folder, fileName).ToLower();
         }
 

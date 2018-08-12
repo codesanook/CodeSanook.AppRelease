@@ -1,0 +1,23 @@
+﻿@using CodeSanook.AppRelease.Models
+@model AppInfoRecord
+
+<h1>@Html.TitleForPage(T("Create new App").ToString())</h1>
+
+@using (Html.BeginFormAntiForgeryPost())
+{
+    <fieldset>
+        @Html.LabelFor(m => m.Title)
+        @Html.TextBoxFor(m => m.Title)
+        @Html.ValidationMessageFor(m => m.Title)
+
+    </fieldset>
+    <fieldset>
+        @Html.LabelFor(m => m.BundleId)
+        @Html.TextBoxFor(m => m.BundleId)
+        @Html.ValidationMessageFor(m => m.BundleId)
+    </fieldset>
+
+    <fieldset>
+        <button class="primaryAction" type="submit">@T("Create")</button>
+    </fieldset>
+}

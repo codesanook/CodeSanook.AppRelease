@@ -104,17 +104,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdminMenu.cs" />
-    <Compile Include="Controllers\AdminController.cs" />
-    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\AppInfoController.cs" />
+    <Compile Include="Controllers\AppReleaseController.cs" />
+    <Compile Include="Drivers\AppDownloadDriver.cs" />
+    <Compile Include="Handlers\AppDownloadHandler.cs" />
     <Compile Include="Migrations.cs" />
+    <Compile Include="Models\AppDownloadPart.cs" />
+    <Compile Include="Models\AppDownloadPartRecord.cs" />
+    <Compile Include="Models\AppInfoRecord.cs" />
     <Compile Include="Models\AppReleaseRecord.cs" />
-    <Compile Include="Models\PostedFile.cs" />
+    <Compile Include="ViewModels\AppReleaseCreateViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Routes.cs" />
+    <Compile Include="ViewModels\AppInfoIndexViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="Scripts\test.js" />
     <Content Include="Web.config" />
     <Content Include="Scripts\Web.config" />
     <Content Include="Styles\Web.config" />
@@ -139,21 +144,37 @@
       <Project>{55A5AF31-438D-4712-B8B6-EE01327842AE}</Project>
       <Name>CodeSanook.Configuration</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Orchard.Widgets\Orchard.Widgets.csproj">
+      <Project>{194d3ccc-1153-474d-8176-fde8d7d0d0bd}</Project>
+      <Name>Orchard.Widgets</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\..\packages\AWSSDK.S3.3.3.18.2\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Views\Admin\Index.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Views\Admin\Add.cshtml" />
+    <Content Include="Views\AppRelease\Create.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Data\manifest.plist" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\Home\Index.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\AppInfo\Index.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\AppInfo\Create.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Placement.info" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\EditorTemplates\Parts\AppDownload.cshtml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Views\Parts\AppDownload.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

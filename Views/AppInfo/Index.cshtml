@@ -1,0 +1,77 @@
+﻿
+@using CodeSanook.AppRelease.ViewModels
+@using CodeSanook.Common.Web
+@using CodeSanook.AppRelease.Controllers
+@model AppInfoIndexViewModel
+
+@{
+    Layout.Title = T("Settings").ToString();
+
+    object createAppReleaseRouteData = null;
+    if (Model.SelectedAppInfoId.HasValue)
+    {
+        createAppReleaseRouteData = new { appInfoId = Model.SelectedAppInfoId };
+    }
+}
+
+<h2>@T("App releases")</h2>
+
+<div class="manage">
+    @Html.ActionLink(T("Create new app").Text,
+    "Create",
+    "AppInfo",
+    null,
+    new { @class = "button primaryAction" })
+</div>
+
+<fieldset>
+    <table class="items">
+        <thead>
+            <tr>
+                <th>@T("Title")</th>
+                <th>@T("Bundle Id")</th>
+                <th>@T("Action")</th>
+            </tr>
+        </thead>
+        @foreach (var item in Model.AppInfos)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.BundleId</td>
+                <td>@Html.ActionLink("Edit", "Edit", "AppInfo", new { id = item.Id }) </td>
+            </tr>
+        }
+    </table>
+</fieldset>
+
+<div class="manage">
+    @Html.ActionLink(T("Add new release").Text,
+    "Create",
+    "AppRelease",
+    createAppReleaseRouteData,
+    new { @class = "button primaryAction" })
+</div>
+
+<fieldset>
+    <table class="items">
+        <thead>
+            <tr>
+                <th>@T("Version number")</th>
+                <th>@T("Version code")</th>
+                <th>@T("URL")</th>
+                <th>@T("Created date UTC")</th>
+                <th>@T("Action")</th>
+            </tr>
+        </thead>
+        @foreach (var item in Model.AppReleases)
+        {
+            <tr>
+                <td>@item.VersionNumber</td>
+                <td>@item.VersionCode</td>
+                <td>@Flurl.Url.Combine(Model.Setting.AwsS3PublicUrl, Model.Setting.AwsS3BucketName, item.FileKey)</td>
+                <td>@item.CreatedUtc</td>
+                <td>@Html.ActionLink(T("Edit"), "Edit", MvcHelper.GetControllerName<AppReleaseController>(), new { item.Id }, null)</td>
+            </tr>
+        }
+    </table>
+</fieldset>

@@ -1,4 +1,7 @@
-﻿using Orchard.Localization;
+﻿using CodeSanook.AppRelease.Controllers;
+using CodeSanook.Common.Modules;
+using CodeSanook.Common.Web;
+using Orchard.Localization;
 using Orchard.UI.Navigation;
 
 namespace CodeSanook.Swagger
@@ -10,11 +13,15 @@ namespace CodeSanook.Swagger
 
         public void GetNavigation(NavigationBuilder builder)
         {
-            builder.Add(T("Settings"),
-                menu => menu.Add(
-                    T("App Releases"),
-                    "1",
-                    item => item.Action("Index", "Admin", new { area = "CodeSanook.AppRelease" }))
+            builder
+                .Add(item => item
+                    .Caption(T("App Release"))
+                    .Position("11")
+                    .Action(
+                        nameof(AppInfoController.Index),
+                        MvcHelper.GetControllerName<AppInfoController>(),
+                        new { area = ModuleHelper.GetModuleName<AppInfoController>() }
+                    )
                 );
         }
     }

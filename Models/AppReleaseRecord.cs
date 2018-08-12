@@ -13,5 +13,6 @@ namespace CodeSanook.AppRelease.Models
         public virtual int VersionCode { get; set; }
         public virtual string FileKey { get; set; }
         public virtual DateTime? CreatedUtc { get; set; }
+        public virtual AppInfoRecord AppInfo { get; set; }
     }
 }
