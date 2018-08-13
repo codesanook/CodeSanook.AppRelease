@@ -1,14 +1,15 @@
 ﻿using CodeSanook.AppRelease.Controllers;
 using CodeSanook.AppRelease.Models;
 using CodeSanook.Common.Web;
-using CodeSanook.Configuration.Models;
 using Orchard;
 using Orchard.ContentManagement;
 using Orchard.ContentManagement.Drivers;
 using Orchard.Data;
+using Orchard.Localization;
 using Orchard.Settings;
+using Orchard.UI.Notify;
 using System.Linq;
-using System.Xml.Linq;
+using Orchard.Widgets.Models;
 
 namespace CodeSanook.AppRelease.Drivers
 {
@@ -16,57 +17,74 @@ namespace CodeSanook.AppRelease.Drivers
     {
         private readonly IOrchardServices orchardService;
         private readonly IRepository<AppInfoRecord> appInfoRepository;
-        private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly ISiteService siteService;
 
+        public Localizer T { get; set; }
         protected override string Prefix => "AppDownload";
 
         public AppDownloadDriver(
             IOrchardServices orchardService,
             IRepository<AppInfoRecord> appInfoRepository,
-            IRepository<AppReleaseRecord> appReleaseRepository,
             ISiteService siteService
             )
         {
             this.orchardService = orchardService;
             this.appInfoRepository = appInfoRepository;
-            this.appReleaseRepository = appReleaseRepository;
             this.siteService = siteService;
+            this.T = NullLocalizer.Instance;
         }
 
+        //GET for showing in front-end
         protected override DriverResult Display(
             AppDownloadPart part,
             string displayType,
             dynamic shapeHelper)
         {
-            var setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
-            var appInfo = this.appInfoRepository.Fetch(a => a.BundleId == part.BundleId).FirstOrDefault();
+            var widgetPart = part.As<WidgetPart>();
+            var title = widgetPart.Title;
 
-            string url = null;
-            string title = null;
-            if (appInfo != null)
-            {
-                var assemblyName = typeof(AppDownloadDriver).Assembly.GetName();
-                url = Flurl.Url.Combine(assemblyName.Name, MvcHelper.GetControllerName<AppInfoController>(), nameof(AppInfoController.GetManifest), $"?bundleId={part.BundleId}");
-                title = appInfo.Title;
-            }
+            var AndroidUrl = part.PlayStoreUrl;
+            var iOsUrl = GetIOsUrl(part);
 
             return ContentShape(
                 "Parts_AppDownload",//name to reference in placement.info
                 () => shapeHelper.Parts_AppDownload(
-                    BundleId: part.BundleId,
-                    Url: url,
-                    Title: title
+                    Title: title,
+                    IOSUrl: iOsUrl,
+                    AndroidUrl: AndroidUrl
                 )
             );
         }
 
-        //GET
-        protected override DriverResult Editor(
-            AppDownloadPart part,
-            dynamic shapeHelper)
+        private string GetIOsUrl(AppDownloadPart part)
         {
+            if (part.IsEnterpriseApp)
+            {
+                var appInfo = this.appInfoRepository.Fetch(a => a.BundleId == part.BundleId).FirstOrDefault();
+                if (appInfo == null)
+                {
+                    this.orchardService.Notifier.Warning(T("Please create app info and release from admin panel."));
+                    return null;
+                }
 
+                var assemblyName = typeof(AppDownloadDriver).Assembly.GetName();
+                return Flurl.Url.Combine(
+                    assemblyName.Name,
+                    MvcHelper.GetControllerName<AppInfoController>(),
+                    nameof(AppInfoController.GetManifest),
+                    $"?bundleId={part.BundleId}");
+            }
+            else
+            {
+                return part.AppStoreUrl;
+            }
+        }
+
+        //GET for editing 
+        protected override DriverResult Editor(
+        AppDownloadPart part,
+        dynamic shapeHelper)
+        {
             return ContentShape("Parts_AppDownload_Edit",
                 () => shapeHelper.EditorTemplate(
                     TemplateName: "Parts/AppDownload",
@@ -83,7 +101,5 @@ namespace CodeSanook.AppRelease.Drivers
             updater.TryUpdateModel(part, Prefix, null, null);
             return Editor(part, shapeHelper);
         }
-
-
     }
 }

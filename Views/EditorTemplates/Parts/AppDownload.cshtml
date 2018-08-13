@@ -5,6 +5,30 @@
   <legend>App download</legend>
 
   <div class="editor-label">
+    @Html.LabelFor(model => model.PlayStoreUrl)
+  </div>
+  <div class="editor-field">
+    @Html.TextBoxFor(model => model.PlayStoreUrl )
+    @Html.ValidationMessageFor(model => model.PlayStoreUrl)
+  </div>
+
+  <div class="editor-label">
+    @Html.LabelFor(model => model.AppStoreUrl)
+  </div>
+  <div class="editor-field">
+    @Html.TextBoxFor(model => model.AppStoreUrl)
+    @Html.ValidationMessageFor(model => model.AppStoreUrl)
+  </div>
+
+  <div class="editor-label">
+    @Html.LabelFor(model => model.IsEnterpriseApp)
+  </div>
+  <div class="editor-field">
+    @Html.CheckBoxFor(model => model.IsEnterpriseApp)
+    @Html.ValidationMessageFor(model => model.IsEnterpriseApp)
+  </div>
+
+  <div class="editor-label">
     @Html.LabelFor(model => model.BundleId)
   </div>
   <div class="editor-field">

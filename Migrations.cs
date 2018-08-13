@@ -29,6 +29,9 @@ namespace CodeSanook.AppRelease
             //create record
             SchemaBuilder.CreateTable<AppDownloadPartRecord>(tableConfig => tableConfig
                 .ContentPartRecord()//auto assign id from content item 
+                .Column<AppDownloadPartRecord, string>(table => table.PlayStoreUrl)
+                .Column<AppDownloadPartRecord, string>(table => table.AppStoreUrl)
+                .Column<AppDownloadPartRecord, bool>(table => table.IsEnterpriseApp)
                 .Column<AppDownloadPartRecord, string>(table => table.BundleId)
             );
 

@@ -161,9 +161,6 @@
     <EmbeddedResource Include="Data\manifest.plist" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Views\Home\Index.cshtml" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Views\AppInfo\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
