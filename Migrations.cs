@@ -4,11 +4,47 @@ using CodeSanook.Common.Data;
 using System;
 using Orchard.ContentManagement.MetaData;
 using Orchard.Core.Contents.Extensions;
+using Orchard.ContentManagement;
+using Orchard.Widgets.Services;
+using System.Linq;
+using Orchard;
+using Orchard.Localization;
+using Orchard.UI.Notify;
+using Orchard.Core.Common.Models;
+using Orchard.Security;
+using CodeSanook.AppRelease.Handlers;
+using Orchard.Settings;
 
 namespace CodeSanook.AppRelease
 {
     public class Migrations : DataMigrationImpl
     {
+        private readonly IContentManager contentManager;
+        private readonly IWidgetsService widgetsService;
+        private readonly IOrchardServices orchardService;
+        private readonly IAppDownloadPartEventHandler appReleaseEventHandler;
+        private readonly ISiteService siteService;
+        private readonly IMembershipService membershipService;
+
+        public Localizer T { get; set; }
+
+        public Migrations(
+            IContentManager contentManager,
+            IWidgetsService widgetsService,
+            IOrchardServices orchardService,
+            IAppDownloadPartEventHandler appReleaseEventHandler,
+            ISiteService siteService,
+            IMembershipService membershipService)
+        {
+            this.contentManager = contentManager;
+            this.widgetsService = widgetsService;
+            this.orchardService = orchardService;
+            this.appReleaseEventHandler = appReleaseEventHandler;
+            this.siteService = siteService;
+            this.membershipService = membershipService;
+            this.T = NullLocalizer.Instance;
+        }
+
         public int Create()
         {
             SchemaBuilder.CreateTable<AppInfoRecord>(tableConfig => tableConfig
@@ -44,8 +80,28 @@ namespace CodeSanook.AppRelease
             ContentDefinitionManager.AlterTypeDefinition("AppDownloadWidget", cfg => cfg
                 .WithPart(nameof(AppDownloadPart))
                 .AsWidgetWithIdentity());
+
+            var layer = widgetsService.GetLayers().FirstOrDefault(x => x.Name == "Default");
+            if (layer == null)
+            {
+                orchardService.Notifier.Warning(T("AppDownloadWidget could not be created because no 'Default' layer. Please create it manually."));
+                return 1;
+            }
+
+            var widgetPart = widgetsService.CreateWidget(layer.Id, "AppDownloadWidget", "App Download", "1.0", "BeforeContent");
+            widgetPart.RenderTitle = false;
+            var commonPart = widgetPart.As<CommonPart>();
+            //var user = this.authenticationServiceFactory().GetAuthenticatedUser();
+            var superUser = this.siteService.GetSiteSettings().SuperUser;
+            var owner = this.membershipService.GetUser(superUser);
+            commonPart.Owner = owner;
+
+            //publish widget
+            orchardService.ContentManager.Publish(widgetPart.ContentItem);
+
+            var appDownloadPart = widgetPart.As<AppDownloadPart>();
+            this.appReleaseEventHandler.OnInitialized(appDownloadPart);
             return 1;
         }
-
     }
 }

@@ -107,7 +107,8 @@
     <Compile Include="Controllers\AppInfoController.cs" />
     <Compile Include="Controllers\AppReleaseController.cs" />
     <Compile Include="Drivers\AppDownloadDriver.cs" />
-    <Compile Include="Handlers\AppDownloadHandler.cs" />
+    <Compile Include="Handlers\AppDownloadPartHandler.cs" />
+    <Compile Include="Handlers\IAppDownloadPartEventHandler.cs" />
     <Compile Include="Migrations.cs" />
     <Compile Include="Models\AppDownloadPart.cs" />
     <Compile Include="Models\AppDownloadPartRecord.cs" />
