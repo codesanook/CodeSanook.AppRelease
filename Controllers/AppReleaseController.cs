@@ -150,7 +150,7 @@ namespace CodeSanook.AppRelease.Controllers
                 var latestRelease = this.appReleaseRepository
                     //TODO indexing on bundle id
                     .Fetch(r => r.AppInfo.BundleId == bundleId)
-                    .OrderByDescending(r => r.VersionNumber)
+                    .OrderByDescending(r => r.VersionCode)
                     .FirstOrDefault();
 
                 var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, latestRelease?.FileKey);

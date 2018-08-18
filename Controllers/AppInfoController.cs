@@ -60,7 +60,7 @@ namespace CodeSanook.AppRelease.Controllers
 
             var releases = appInfo
                 .AppReleases
-                .OrderByDescending(r => r.VersionNumber)
+                .OrderByDescending(r => r.VersionCode)
                 .ToArray();
             return releases;
         }
