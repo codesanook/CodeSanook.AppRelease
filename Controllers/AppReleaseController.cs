@@ -1,9 +1,10 @@
-﻿using Amazon.Runtime;
-using Amazon.S3;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using CodeSanook.AppRelease.Models;
 using CodeSanook.AppRelease.ViewModels;
 using CodeSanook.Common.Web;
+using CodeSanook.Configuration;
 using CodeSanook.Configuration.Models;
 using Orchard;
 using Orchard.ContentManagement;
@@ -39,6 +40,7 @@ namespace CodeSanook.AppRelease.Controllers
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly IOrchardServices orchardService;
         private readonly ISiteService siteService;
+        private readonly ModuleSettingPart setting;
 
         //property injection
         public ILogger Logger { get; set; }
@@ -56,11 +58,12 @@ namespace CodeSanook.AppRelease.Controllers
             this.siteService = siteService;
             this.T = NullLocalizer.Instance;
             this.Logger = NullLogger.Instance;
+            setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
         }
 
         public ActionResult Index()
         {
-            ViewBag.Setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
+            ViewBag.Setting = this.setting;
             var items = this.appReleaseRepository.Table.OrderByDescending(i => i.VersionCode).ToArray();
             return View(items);
         }
@@ -108,12 +111,13 @@ namespace CodeSanook.AppRelease.Controllers
             var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
 
             var fileKey = CreateFileKey(viewModel, appInfo);
-            using (var client = GetS3Client())
+            using (var client = S3Helper.GetS3Client(this.setting))
             using (var inputStream = viewModel.File.InputStream)
             {
-                var fileTransferUtility = new TransferUtility(client);
-                var uploadRequest = CreateFileUpload(inputStream, fileKey);
-                await fileTransferUtility.UploadAsync(uploadRequest);
+                //var fileTransferUtility = new TransferUtility(client);
+                // await fileTransferUtility.UploadAsync(uploadRequest);
+                var putObjectRequest = CreateFileUploadRequest(inputStream, fileKey);
+                await client.PutObjectAsync(putObjectRequest);
             }
 
             var appRelease = new AppReleaseRecord()
@@ -128,32 +132,6 @@ namespace CodeSanook.AppRelease.Controllers
             this.appReleaseRepository.Create(appRelease);
             this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
             return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
-        }
-
-        private AmazonS3Client GetS3Client()
-        {
-            var setting = orchardService.WorkContext.CurrentSite.As<ModuleSettingPart>();
-            if (setting.UseLocalS3rver)
-            {
-                var credentials = new BasicAWSCredentials("", "");
-                var config = new AmazonS3Config
-                {
-                    ServiceURL = setting.LocalS3rverServiceUrl,
-                    UseHttp = true,
-                    ForcePathStyle = true,
-                };
-                return new AmazonS3Client(credentials, config);
-            }
-            else
-            {
-                var credentials = new BasicAWSCredentials(setting.AwsAccessKey, setting.AwsSecretKey);
-                var config = new AmazonS3Config
-                {
-                    ServiceURL = setting.AwsS3ServiceUrl,
-                    UseHttp = false,
-                };
-                return new AmazonS3Client(credentials, config);
-            }
         }
 
         public ActionResult GetManifest(string bundleId)
@@ -175,14 +153,12 @@ namespace CodeSanook.AppRelease.Controllers
                     .OrderByDescending(r => r.VersionNumber)
                     .FirstOrDefault();
 
-                var setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
-                var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, setting.AwsS3BucketName, latestRelease?.FileKey);
+                var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, latestRelease?.FileKey);
                 urlValue.Value = url;
 
                 var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
                 var bundleIdValue = bundleIdKey.NextNode as XElement;
                 bundleIdValue.Value = bundleId;
-
 
                 var bundleVersionKey = allKeys.Single(e => e.Value == "bundle-version");
                 var bundleVersionValue = bundleVersionKey.NextNode as XElement;
@@ -194,7 +170,6 @@ namespace CodeSanook.AppRelease.Controllers
 
                 return Content(xmlDoc.ToString(), "text/xml");
             }
-
         }
 
         public ActionResult Manifest()
@@ -202,29 +177,27 @@ namespace CodeSanook.AppRelease.Controllers
             return Content("okay");
         }
 
-
         private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo)
         {
             var now = DateTime.UtcNow;
-            var folder = $"{rootFolder}/{now:yyyy}/{now:MM}/{now:dd}";
+            var folder = $"{rootFolder}/{now:yyyy}/{now:MM}/{now:dd}/{now:HH}/{now:mm}/{now:ss}";
 
             var title = replaceTitleNamePattern.Replace(appInfo.Title, "-").ToLower();
             var fileName = $"{title}-{viewModel.VersionNumber}.ipa";
             return string.Format("{0}/{1}", folder, fileName).ToLower();
         }
 
-        private TransferUtilityUploadRequest CreateFileUpload(Stream inputStream, string key)
+        private PutObjectRequest CreateFileUploadRequest(Stream inputStream, string key)
         {
-            var setting = orchardService.WorkContext.CurrentSite.As<ModuleSettingPart>();
-            var uploadRequest = new TransferUtilityUploadRequest
+            var request = new PutObjectRequest()
             {
-                InputStream = inputStream,
                 BucketName = setting.AwsS3BucketName,
-                CannedACL = S3CannedACL.Private,
-                Key = key
+                Key = key,
+                InputStream = inputStream,
+                CannedACL = S3CannedACL.PublicRead
             };
-            return uploadRequest;
+
+            return request;
         }
     }
-
 }

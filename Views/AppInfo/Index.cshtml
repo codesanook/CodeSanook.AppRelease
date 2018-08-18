@@ -68,7 +68,7 @@
             <tr>
                 <td>@item.VersionNumber</td>
                 <td>@item.VersionCode</td>
-                <td>@Flurl.Url.Combine(Model.Setting.AwsS3PublicUrl, Model.Setting.AwsS3BucketName, item.FileKey)</td>
+                <td>@Flurl.Url.Combine(Model.Setting.AwsS3PublicUrl, item.FileKey)</td>
                 <td>@item.CreatedUtc</td>
                 <td>@Html.ActionLink(T("Edit"), "Edit", MvcHelper.GetControllerName<AppReleaseController>(), new { item.Id }, null)</td>
             </tr>
