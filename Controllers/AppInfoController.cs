@@ -6,6 +6,7 @@ using Orchard.ContentManagement;
 using Orchard.Data;
 using Orchard.Settings;
 using Orchard.UI.Admin;
+using System;
 using System.Linq;
 using System.Web.Mvc;
 using System.Xml.Linq;
@@ -17,18 +18,15 @@ namespace CodeSanook.AppRelease.Controllers
     {
         private readonly IOrchardServices orchardService;
         private readonly IRepository<AppInfoRecord> repository;
-        private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly ISiteService siteService;
 
         public AppInfoController(
             IOrchardServices orchardService,
             IRepository<AppInfoRecord> appInfoRepository,
-            IRepository<AppReleaseRecord> appReleaseRepository,
             ISiteService siteService)
         {
             this.orchardService = orchardService;
             this.repository = appInfoRepository;
-            this.appReleaseRepository = appReleaseRepository;
             this.siteService = siteService;
         }
 
@@ -38,33 +36,30 @@ namespace CodeSanook.AppRelease.Controllers
                 .OrderBy(a => a.Title)
                 .ToArray();
 
-            var selectedAppInfoId = appInfoId ?? appInfoes.FirstOrDefault()?.Id;
-            var appReleases = GetAppReleases(selectedAppInfoId);
+            var selectedAppInfo = appInfoId.HasValue
+                ? appInfoes.SingleOrDefault(a => a.Id == appInfoId)
+                : appInfoes.FirstOrDefault();
 
-            var setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
             var viewModel = new AppInfoIndexViewModel()
             {
                 AppInfos = appInfoes,
-                AppReleases = appReleases,
-                SelectedAppInfoId = selectedAppInfoId,
-                Setting = setting
+                AppReleases = GetAppReleasesForAppInfo(selectedAppInfo),
+                SelectedAppInfoId = selectedAppInfo?.Id,
+                Setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>()
             };
 
             return View(viewModel);
         }
 
-
-
-        private AppReleaseRecord[] GetAppReleases(int? selectedAppInfoId)
+        private AppReleaseRecord[] GetAppReleasesForAppInfo(AppInfoRecord appInfo)
         {
-            var releaseQuery = appReleaseRepository.Table;
-            //selectedBundleId can be null incase that there is no any release
-            if (selectedAppInfoId.HasValue)
+            if (appInfo == null)
             {
-                releaseQuery = releaseQuery.Where(r => r.AppInfo.Id == selectedAppInfoId);
+                return Array.Empty<AppReleaseRecord>();
             }
 
-            var releases = releaseQuery
+            var releases = appInfo
+                .AppReleases
                 .OrderByDescending(r => r.VersionNumber)
                 .ToArray();
             return releases;
@@ -87,44 +82,5 @@ namespace CodeSanook.AppRelease.Controllers
             return View();
         }
 
-        public ActionResult GetManifest(string bundleId)
-        {
-            var assembly = typeof(AppInfoController).Assembly;
-            var resourceName = $"{assembly.GetName().Name}.Data.manifest.plist";
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            {
-                //var result = reader.ReadToEnd();
-                var xmlDoc = XDocument.Load(stream);
-                var allKeys = xmlDoc.Descendants("key");
-
-                var urlKey = allKeys.Single(e => e.Value == "url");
-                var urlValue = urlKey.NextNode as XElement;
-
-                var latestRelease = this.appReleaseRepository
-                    //TODO indexing on bundle id
-                    .Fetch(r => r.AppInfo.BundleId == bundleId)
-                    .OrderByDescending(r => r.VersionNumber)
-                    .FirstOrDefault();
-
-                var setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
-                var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, setting.AwsS3BucketName, latestRelease?.FileKey);
-                urlValue.Value = url;
-
-                var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
-                var bundleIdValue = bundleIdKey.NextNode as XElement;
-                bundleIdValue.Value = bundleId;
-
-
-                var bundleVersionKey = allKeys.Single(e => e.Value == "bundle-version");
-                var bundleVersionValue = bundleVersionKey.NextNode as XElement;
-                bundleVersionValue.Value = latestRelease.VersionNumber;
-
-                var titleKey = allKeys.Where(e => e.Value == "title").First();
-                var titleValue = titleKey.NextNode as XElement;
-                titleValue.Value = latestRelease?.AppInfo?.Title;
-
-                return Content(xmlDoc.ToString(), "text/xml");
-            }
-        }
     }
 }

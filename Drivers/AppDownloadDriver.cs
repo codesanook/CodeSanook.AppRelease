@@ -70,8 +70,8 @@ namespace CodeSanook.AppRelease.Drivers
                 var assemblyName = typeof(AppDownloadDriver).Assembly.GetName();
                 return Flurl.Url.Combine(
                     assemblyName.Name,
-                    MvcHelper.GetControllerName<AppInfoController>(),
-                    nameof(AppInfoController.GetManifest),
+                    MvcHelper.GetControllerName<AppReleaseController>(),
+                    nameof(AppReleaseController.GetManifest),
                     $"?bundleId={part.BundleId}");
             }
             else

@@ -11,6 +11,7 @@ using Orchard.Data;
 using Orchard.Localization;
 using Orchard.Logging;
 using Orchard.Mvc.AntiForgery;
+using Orchard.Settings;
 using Orchard.UI.Admin;
 using Orchard.UI.Notify;
 using System;
@@ -19,6 +20,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using System.Xml.Linq;
+
 namespace CodeSanook.AppRelease.Controllers
 {
     [Admin]
@@ -35,7 +38,7 @@ namespace CodeSanook.AppRelease.Controllers
         private readonly IRepository<AppInfoRecord> appInfoRepository;
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly IOrchardServices orchardService;
-        private readonly ModuleSettingPart setting;
+        private readonly ISiteService siteService;
 
         //property injection
         public ILogger Logger { get; set; }
@@ -44,19 +47,20 @@ namespace CodeSanook.AppRelease.Controllers
         public AppReleaseController(
             IRepository<AppInfoRecord> appInfoRepository,
             IRepository<AppReleaseRecord> appReleaseRepository,
-            IOrchardServices orchardService)
+            IOrchardServices orchardService,
+            ISiteService siteService)
         {
             this.appInfoRepository = appInfoRepository;
             this.appReleaseRepository = appReleaseRepository;
             this.orchardService = orchardService;
+            this.siteService = siteService;
             this.T = NullLocalizer.Instance;
             this.Logger = NullLogger.Instance;
-            setting = orchardService.WorkContext.CurrentSite.As<ModuleSettingPart>();
         }
 
         public ActionResult Index()
         {
-            ViewBag.Setting = this.setting;
+            ViewBag.Setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
             var items = this.appReleaseRepository.Table.OrderByDescending(i => i.VersionCode).ToArray();
             return View(items);
         }
@@ -152,6 +156,53 @@ namespace CodeSanook.AppRelease.Controllers
             }
         }
 
+        public ActionResult GetManifest(string bundleId)
+        {
+            var assembly = typeof(AppInfoController).Assembly;
+            var resourceName = $"{assembly.GetName().Name}.Data.manifest.plist";
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                //var result = reader.ReadToEnd();
+                var xmlDoc = XDocument.Load(stream);
+                var allKeys = xmlDoc.Descendants("key");
+
+                var urlKey = allKeys.Single(e => e.Value == "url");
+                var urlValue = urlKey.NextNode as XElement;
+
+                var latestRelease = this.appReleaseRepository
+                    //TODO indexing on bundle id
+                    .Fetch(r => r.AppInfo.BundleId == bundleId)
+                    .OrderByDescending(r => r.VersionNumber)
+                    .FirstOrDefault();
+
+                var setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
+                var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, setting.AwsS3BucketName, latestRelease?.FileKey);
+                urlValue.Value = url;
+
+                var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
+                var bundleIdValue = bundleIdKey.NextNode as XElement;
+                bundleIdValue.Value = bundleId;
+
+
+                var bundleVersionKey = allKeys.Single(e => e.Value == "bundle-version");
+                var bundleVersionValue = bundleVersionKey.NextNode as XElement;
+                bundleVersionValue.Value = latestRelease.VersionNumber;
+
+                var titleKey = allKeys.Where(e => e.Value == "title").First();
+                var titleValue = titleKey.NextNode as XElement;
+                titleValue.Value = latestRelease?.AppInfo?.Title;
+
+                return Content(xmlDoc.ToString(), "text/xml");
+            }
+
+        }
+
+        public ActionResult Manifest()
+        {
+            return Content("okay");
+        }
+
+
         private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo)
         {
             var now = DateTime.UtcNow;
@@ -175,4 +226,5 @@ namespace CodeSanook.AppRelease.Controllers
             return uploadRequest;
         }
     }
+
 }

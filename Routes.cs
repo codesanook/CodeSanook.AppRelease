@@ -30,7 +30,7 @@ namespace CodeSanook.AppRelease
                         "AppRelease/{action}", //URL, cannot be start with / or ~
                         new RouteValueDictionary {//default
                             {"area", moduleName},
-                            {"controller", "Home"},
+                            {"controller", "AppRelease"},
                             {"action", "Index"}
                         },
                         new RouteValueDictionary(),//constraint
