@@ -9,27 +9,27 @@ namespace CodeSanook.AppRelease.Models
         [Required]
         public virtual string PlayStoreUrl
         {
-            get => this.Record.PlayStoreUrl;
-            set => this.Record.PlayStoreUrl = value;
+            get { return this.Record.PlayStoreUrl; }
+            set { this.Record.PlayStoreUrl = value; }
         }
 
         //For enterprise app only
         public virtual bool IsEnterpriseApp
         {
-            get => this.Record.IsEnterpriseApp;
-            set => this.Record.IsEnterpriseApp = value;
+            get { return this.Record.IsEnterpriseApp; }
+            set { this.Record.IsEnterpriseApp = value; }
         }
 
         public string BundleId
         {
-            get => this.Record.BundleId;
-            set => this.Record.BundleId = value;
+            get { return this.Record.BundleId; }
+            set { this.Record.BundleId = value; }
         }
 
         public virtual string AppStoreUrl
         {
-            get => this.Record.AppStoreUrl;
-            set => this.Record.AppStoreUrl = value;
+            get { return this.Record.AppStoreUrl; }
+            set { this.Record.AppStoreUrl = value; }
         }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
