@@ -3,6 +3,8 @@ using System.Web.Mvc;
 using System.Web.Routing;
 using Orchard.Mvc.Routes;
 using CodeSanook.Common.Modules;
+using CodeSanook.Common.Web;
+using CodeSanook.AppRelease.Controllers;
 
 namespace CodeSanook.AppRelease
 {
@@ -24,14 +26,14 @@ namespace CodeSanook.AppRelease
             {
                 new RouteDescriptor
                 {
-                    Name = "AppRelease",
+                    Name = "AppDownload",
                     Priority = 100,
                     Route = new Route(
-                        "AppRelease/{action}", //URL, cannot be start with / or ~
+                        "appdownload/{bundleId}/manifest.plist", //URL, cannot be start with / or ~
                         new RouteValueDictionary {//default
                             {"area", moduleName},
-                            {"controller", "AppRelease"},
-                            {"action", "Index"}
+                            {"controller", MvcHelper.GetControllerName<AppDownloadController>() },
+                            {"action", nameof(AppDownloadController.GetManifest)}
                         },
                         new RouteValueDictionary(),//constraint
                         new RouteValueDictionary {//data token

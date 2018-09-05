@@ -9,7 +9,6 @@ using Orchard.UI.Admin;
 using System;
 using System.Linq;
 using System.Web.Mvc;
-using System.Xml.Linq;
 
 namespace CodeSanook.AppRelease.Controllers
 {

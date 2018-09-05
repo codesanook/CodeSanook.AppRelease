@@ -88,11 +88,13 @@ namespace CodeSanook.AppRelease.Drivers
             };
 
             var url = new UrlHelper(request.RequestContext);
-            var downloadUrl = url.Action(
-                  nameof(AppDownloadController.GetManifest),
-                  MvcHelper.GetControllerName<AppDownloadController>(),
-                  routeValues);
+            //var downloadUrl = url.Action(
+            //      nameof(AppDownloadController.GetManifest),
+            //      MvcHelper.GetControllerName<AppDownloadController>(),
+            //      routeValues);
 
+
+            var downloadUrl= url.RouteUrl("AppDownload", new { bundleId = part.BundleId });
             var absoluteUrl = url.MakeAbsolute(downloadUrl, siteUrl);
             return $"itms-services://?action=download-manifest&url={absoluteUrl}";
         }

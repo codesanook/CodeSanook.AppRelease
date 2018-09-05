@@ -69,5 +69,15 @@ namespace CodeSanook.AppRelease.Controllers
                 return Content(xmlDoc.ToString(), "text/xml");
             }
         }
+
+        public ActionResult Manifest()
+        {
+            return Content("OKay");
+        }
+
+        public ActionResult Index()
+        {
+            return Content("index");
+        }
     }
 }
