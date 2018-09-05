@@ -1,6 +1,5 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.S3.Transfer;
 using CodeSanook.AppRelease.Models;
 using CodeSanook.AppRelease.ViewModels;
 using CodeSanook.Common.Web;
@@ -21,7 +20,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using System.Xml.Linq;
 
 namespace CodeSanook.AppRelease.Controllers
 {
@@ -107,9 +105,7 @@ namespace CodeSanook.AppRelease.Controllers
             int versionCode = (int)(major * Math.Pow(10, 4) + minor * Math.Pow(10, 2) + patch);
 
             //todo prevent existing version
-
             var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
-
             var fileKey = CreateFileKey(viewModel, appInfo);
             using (var client = S3Helper.GetS3Client(this.setting))
             using (var inputStream = viewModel.File.InputStream)
@@ -132,49 +128,6 @@ namespace CodeSanook.AppRelease.Controllers
             this.appReleaseRepository.Create(appRelease);
             this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
             return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
-        }
-
-        public ActionResult GetManifest(string bundleId)
-        {
-            var assembly = typeof(AppInfoController).Assembly;
-            var resourceName = $"{assembly.GetName().Name}.Data.manifest.plist";
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            {
-                //var result = reader.ReadToEnd();
-                var xmlDoc = XDocument.Load(stream);
-                var allKeys = xmlDoc.Descendants("key");
-
-                var urlKey = allKeys.Single(e => e.Value == "url");
-                var urlValue = urlKey.NextNode as XElement;
-
-                var latestRelease = this.appReleaseRepository
-                    //TODO indexing on bundle id
-                    .Fetch(r => r.AppInfo.BundleId == bundleId)
-                    .OrderByDescending(r => r.VersionCode)
-                    .FirstOrDefault();
-
-                var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, latestRelease?.FileKey);
-                urlValue.Value = url;
-
-                var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
-                var bundleIdValue = bundleIdKey.NextNode as XElement;
-                bundleIdValue.Value = bundleId;
-
-                var bundleVersionKey = allKeys.Single(e => e.Value == "bundle-version");
-                var bundleVersionValue = bundleVersionKey.NextNode as XElement;
-                bundleVersionValue.Value = latestRelease.VersionNumber;
-
-                var titleKey = allKeys.Where(e => e.Value == "title").First();
-                var titleValue = titleKey.NextNode as XElement;
-                titleValue.Value = latestRelease?.AppInfo?.Title;
-
-                return Content(xmlDoc.ToString(), "text/xml");
-            }
-        }
-
-        public ActionResult Manifest()
-        {
-            return Content("okay");
         }
 
         private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo)

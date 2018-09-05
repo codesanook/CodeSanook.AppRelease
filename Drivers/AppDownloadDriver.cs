@@ -10,6 +10,9 @@ using Orchard.Settings;
 using Orchard.UI.Notify;
 using System.Linq;
 using Orchard.Widgets.Models;
+using System.Web.Mvc;
+using CodeSanook.Common.Modules;
+using Orchard.Mvc.Extensions;
 
 namespace CodeSanook.AppRelease.Drivers
 {
@@ -18,6 +21,7 @@ namespace CodeSanook.AppRelease.Drivers
         private readonly IOrchardServices orchardService;
         private readonly IRepository<AppInfoRecord> appInfoRepository;
         private readonly ISiteService siteService;
+        private readonly IWorkContextAccessor workContextAccessor;
 
         public Localizer T { get; set; }
         protected override string Prefix => "AppDownload";
@@ -25,12 +29,13 @@ namespace CodeSanook.AppRelease.Drivers
         public AppDownloadDriver(
             IOrchardServices orchardService,
             IRepository<AppInfoRecord> appInfoRepository,
-            ISiteService siteService
-            )
+            ISiteService siteService,
+            IWorkContextAccessor workContextAccessor)
         {
             this.orchardService = orchardService;
             this.appInfoRepository = appInfoRepository;
             this.siteService = siteService;
+            this.workContextAccessor = workContextAccessor;
             this.T = NullLocalizer.Instance;
         }
 
@@ -58,26 +63,38 @@ namespace CodeSanook.AppRelease.Drivers
 
         private string GetIOsUrl(AppDownloadPart part)
         {
-            if (part.IsEnterpriseApp)
-            {
-                var appInfo = this.appInfoRepository.Fetch(a => a.BundleId == part.BundleId).FirstOrDefault();
-                if (appInfo == null)
-                {
-                    this.orchardService.Notifier.Warning(T("Please create app info and release from admin panel."));
-                    return null;
-                }
-
-                var assemblyName = typeof(AppDownloadDriver).Assembly.GetName();
-                return Flurl.Url.Combine(
-                    assemblyName.Name,
-                    MvcHelper.GetControllerName<AppReleaseController>(),
-                    nameof(AppReleaseController.GetManifest),
-                    $"?bundleId={part.BundleId}");
-            }
-            else
+            if (!part.IsEnterpriseApp)
             {
                 return part.AppStoreUrl;
             }
+
+            var appInfo = this.appInfoRepository.Fetch(a => a.BundleId == part.BundleId).FirstOrDefault();
+            if (appInfo == null)
+            {
+                this.orchardService.Notifier.Warning(T("Please create app info and release from admin panel."));
+                return null;
+            }
+
+            var request = orchardService.WorkContext.HttpContext.Request;
+            var siteUrl = orchardService.WorkContext.CurrentSite.BaseUrl;
+            siteUrl = !string.IsNullOrWhiteSpace(siteUrl)
+                ? siteUrl
+                : string.Format("{0}://{1}", request.Url.Scheme, request.Url.Host);
+
+            var routeValues = new
+            {
+                Area = ModuleHelper.GetModuleName<AppDownloadDriver>(),
+                bundleId = part.BundleId
+            };
+
+            var url = new UrlHelper(request.RequestContext);
+            var downloadUrl = url.Action(
+                  nameof(AppDownloadController.GetManifest),
+                  MvcHelper.GetControllerName<AppDownloadController>(),
+                  routeValues);
+
+            var absoluteUrl = url.MakeAbsolute(downloadUrl, siteUrl);
+            return $"itms-services://?action=download-manifest&url={absoluteUrl}";
         }
 
         //GET for editing 

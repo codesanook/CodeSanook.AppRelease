@@ -47,7 +47,7 @@
 <div class="manage">
     @Html.ActionLink(T("Add new release").Text,
     "Create",
-    "AppRelease",
+    MvcHelper.GetControllerName<AppReleaseController>(),
     createAppReleaseRouteData,
     new { @class = "button primaryAction" })
 </div>
@@ -70,7 +70,13 @@
                 <td>@item.VersionCode</td>
                 <td>@Flurl.Url.Combine(Model.Setting.AwsS3PublicUrl, item.FileKey)</td>
                 <td>@item.CreatedUtc</td>
-                <td>@Html.ActionLink(T("Edit"), "Edit", MvcHelper.GetControllerName<AppReleaseController>(), new { item.Id }, null)</td>
+                <td>
+                    @Html.ActionLink(
+                       T("Edit"),
+                       "Edit",
+                       MvcHelper.GetControllerName<AppReleaseController>(),
+                       new { item.Id }, null)
+                </td>
             </tr>
         }
     </table>

@@ -105,6 +105,7 @@
   <ItemGroup>
     <Compile Include="AdminMenu.cs" />
     <Compile Include="Controllers\AppInfoController.cs" />
+    <Compile Include="Controllers\AppDownloadController.cs" />
     <Compile Include="Controllers\AppReleaseController.cs" />
     <Compile Include="Drivers\AppDownloadDriver.cs" />
     <Compile Include="Handlers\AppDownloadPartHandler.cs" />
@@ -180,6 +181,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Web.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="README.md" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
