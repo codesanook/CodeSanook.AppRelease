@@ -147,7 +147,8 @@ namespace CodeSanook.AppRelease.Controllers
                 BucketName = setting.AwsS3BucketName,
                 Key = key,
                 InputStream = inputStream,
-                CannedACL = S3CannedACL.PublicRead
+                CannedACL = S3CannedACL.PublicRead,
+                ContentType = "application/octet-stream"
             };
 
             return request;
