@@ -5,9 +5,9 @@
 
 .download-link__platform {
     display: inline-block;
-    margin: 10px 20px;
+    margin: 7px 20px;
     width: 100%;
-    max-width: 250px;
+    max-width: 160px;
 }
 
 .download-link__platform img {
