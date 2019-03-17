@@ -1,4 +1,4 @@
-﻿using CodeSanook.AppRelease.Models;
+using CodeSanook.AppRelease.Models;
 using CodeSanook.AppRelease.ViewModels;
 using CodeSanook.Configuration.Models;
 using Orchard;
@@ -72,6 +72,8 @@ namespace CodeSanook.AppRelease.Controllers
         [HttpPost]
         public ActionResult Create(AppInfoRecord appInfo)
         {
+            appInfo.Title = appInfo.Title.Trim();
+            appInfo.BundleId = appInfo.BundleId.Trim();
             this.repository.Create(appInfo);
             return RedirectToAction(nameof(Index), new { bundleId = appInfo.BundleId });
         }
@@ -80,6 +82,5 @@ namespace CodeSanook.AppRelease.Controllers
         {
             return View();
         }
-
     }
 }

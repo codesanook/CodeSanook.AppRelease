@@ -1,4 +1,4 @@
-﻿using Amazon.S3;
+using Amazon.S3;
 using Amazon.S3.Model;
 using CodeSanook.AppRelease.Models;
 using CodeSanook.AppRelease.ViewModels;
@@ -6,6 +6,7 @@ using CodeSanook.Common.Web;
 using CodeSanook.Configuration;
 using CodeSanook.Configuration.Models;
 using Orchard;
+using Orchard.Caching.Services;
 using Orchard.ContentManagement;
 using Orchard.Data;
 using Orchard.Localization;
@@ -29,6 +30,7 @@ namespace CodeSanook.AppRelease.Controllers
         const string rootFolder = "app-releases";
         private static Regex versionNumberPattern = new Regex(@"^(?<major>\d+)\.(?<minor>\d{1,2})\.(?<patch>\d{1,2})$", RegexOptions.Compiled);
         private static Regex replaceTitleNamePattern = new Regex(@"[\s\.]+", RegexOptions.Compiled);
+        private ICacheService cacheService;
 
         //https://semver.org/
         //MAJOR version when you make incompatible API changes,
@@ -48,7 +50,8 @@ namespace CodeSanook.AppRelease.Controllers
             IRepository<AppInfoRecord> appInfoRepository,
             IRepository<AppReleaseRecord> appReleaseRepository,
             IOrchardServices orchardService,
-            ISiteService siteService)
+            ISiteService siteService,
+            ICacheService cacheService)
         {
             this.appInfoRepository = appInfoRepository;
             this.appReleaseRepository = appReleaseRepository;
@@ -57,6 +60,7 @@ namespace CodeSanook.AppRelease.Controllers
             this.T = NullLocalizer.Instance;
             this.Logger = NullLogger.Instance;
             setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
+            this.cacheService = cacheService;
         }
 
         public ActionResult Index()
@@ -104,7 +108,7 @@ namespace CodeSanook.AppRelease.Controllers
             var patch = int.Parse(match.Groups["patch"].Value);
             int versionCode = (int)(major * Math.Pow(10, 4) + minor * Math.Pow(10, 2) + patch);
 
-            //todo prevent existing version
+            //TODO prevent existing version
             var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
             var fileKey = CreateFileKey(viewModel, appInfo);
             using (var client = S3Helper.GetS3Client(this.setting))
@@ -126,6 +130,9 @@ namespace CodeSanook.AppRelease.Controllers
             };
 
             this.appReleaseRepository.Create(appRelease);
+            //Remove existing cache after a new release
+            this.cacheService.Remove(LatestAppReleaseInfo.CacheKey);
+
             this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
             return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
         }
