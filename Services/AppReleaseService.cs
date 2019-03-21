@@ -17,7 +17,7 @@ using System.Xml.Linq;
 
 namespace CodeSanook.AppRelease.Services
 {
-    public class AppReleaseService : IAppReleaseService 
+    public class AppReleaseService : IAppReleaseService
     {
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly ISiteService siteService;
@@ -46,8 +46,16 @@ namespace CodeSanook.AppRelease.Services
 
         public LatestAppReleaseInfo GetLatestAppReleaseInfo(string bundleId)
         {
+            var latestAppReleaseInfo = this.cacheService.Get<LatestAppReleaseInfo>(LatestAppReleaseInfo.CacheKey);
+            if (latestAppReleaseInfo != null)
+            {
+                return latestAppReleaseInfo;
+            }
+
             //Get p12 key from https://console.developers.google.com
             var data = Convert.FromBase64String(setting.GoogleServiceAccountP12Key);
+
+            //TODO move to configuration before publish this module
             var serviceAccountEmail = "google-play-api@thailand-fls-app.iam.gserviceaccount.com";  // found https://console.developers.google.com
 
             //loading the Key file
@@ -74,11 +82,15 @@ namespace CodeSanook.AppRelease.Services
             var latestApk = response.Apks.OrderByDescending(x => x.VersionCode).First();
             var latestIap = GetLatestAppRelease(bundleId);
 
-            return new LatestAppReleaseInfo()
+            latestAppReleaseInfo = new LatestAppReleaseInfo()
             {
                 AndroidVersionCode = latestApk.VersionCode,
                 IOsVersionCode = latestIap?.VersionCode
             };
+
+            //Add to cache for two week
+            this.cacheService.Put(LatestAppReleaseInfo.CacheKey, latestAppReleaseInfo, TimeSpan.FromDays(14));
+            return latestAppReleaseInfo;
         }
 
         public AppReleaseRecord GetLatestAppRelease(string bundleId)

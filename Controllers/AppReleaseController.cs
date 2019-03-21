@@ -90,6 +90,7 @@ namespace CodeSanook.AppRelease.Controllers
         [HttpPost]
         public async Task<ActionResult> Create(AppReleaseCreateViewModel viewModel)
         {
+            //TODO move logic to ApReleaseService
             if (!this.ModelState.IsValid)
             {
                 return View(viewModel);
@@ -130,6 +131,7 @@ namespace CodeSanook.AppRelease.Controllers
             };
 
             this.appReleaseRepository.Create(appRelease);
+
             //Remove existing cache after a new release
             this.cacheService.Remove(LatestAppReleaseInfo.CacheKey);
 
