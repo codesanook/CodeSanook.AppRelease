@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Orchard.Mvc.Routes;
 using CodeSanook.Common.Modules;
 using CodeSanook.Common.Web;
 using CodeSanook.AppRelease.Controllers;
+using System.Web.Http;
 
 namespace CodeSanook.AppRelease
 {
@@ -41,7 +42,21 @@ namespace CodeSanook.AppRelease
                         },
                         new MvcRouteHandler())//handler
                 },
-            };
-        }
+
+                new HttpRouteDescriptor
+                {
+                    Name = "LatestAppReleaseInfo",
+                    Priority = 0,
+                    RouteTemplate ="LatestAppReleaseInfo/{id}" ,
+                    Defaults = new
+                    {
+                        area = this.GetType().Namespace, //module name
+                        controller = "LatestAppReleaseInfo", //controller name without controller subfix
+                        id = RouteParameter.Optional
+                    },
+                }
+
+        };
     }
+}
 }
