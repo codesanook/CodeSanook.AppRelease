@@ -59,7 +59,11 @@ namespace CodeSanook.AppRelease.Services
             var serviceAccountEmail = "google-play-api@thailand-fls-app.iam.gserviceaccount.com";  // found https://console.developers.google.com
 
             //loading the Key file
-            var certificate = new X509Certificate2(data, "notasecret", X509KeyStorageFlags.Exportable);
+            var certificate = new X509Certificate2(data, "notasecret",
+                X509KeyStorageFlags.MachineKeySet |
+                X509KeyStorageFlags.PersistKeySet |
+                X509KeyStorageFlags.Exportable
+            );
             var credential = new ServiceAccountCredential(new ServiceAccountCredential.Initializer(serviceAccountEmail)
             {
                 Scopes = scopes
