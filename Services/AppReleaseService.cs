@@ -1,5 +1,5 @@
-using CodeSanook.AppRelease.Models;
-using CodeSanook.Configuration.Models;
+using Codesanook.AppRelease.Models;
+using Codesanook.Configuration.Models;
 using Google.Apis.AndroidPublisher.v3;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
@@ -15,10 +15,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
 
-namespace CodeSanook.AppRelease.Services
-{
-    public class AppReleaseService : IAppReleaseService
-    {
+namespace Codesanook.AppRelease.Services {
+    public class AppReleaseService : IAppReleaseService {
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly ISiteService siteService;
         private readonly ICacheService cacheService;
@@ -34,8 +32,7 @@ namespace CodeSanook.AppRelease.Services
             IRepository<AppReleaseRecord> appReleaseRepository,
             ISiteService siteService,
             ICacheService cacheService
-        )
-        {
+        ) {
             this.appReleaseRepository = appReleaseRepository;
             this.siteService = siteService;
             this.cacheService = cacheService;
@@ -44,11 +41,9 @@ namespace CodeSanook.AppRelease.Services
             setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
         }
 
-        public LatestAppReleaseInfo GetLatestAppReleaseInfo(string bundleId)
-        {
+        public LatestAppReleaseInfo GetLatestAppReleaseInfo(string bundleId) {
             var latestAppReleaseInfo = this.cacheService.Get<LatestAppReleaseInfo>(LatestAppReleaseInfo.CacheKey);
-            if (latestAppReleaseInfo != null)
-            {
+            if (latestAppReleaseInfo != null) {
                 return latestAppReleaseInfo;
             }
 
@@ -64,14 +59,12 @@ namespace CodeSanook.AppRelease.Services
                 X509KeyStorageFlags.PersistKeySet |
                 X509KeyStorageFlags.Exportable
             );
-            var credential = new ServiceAccountCredential(new ServiceAccountCredential.Initializer(serviceAccountEmail)
-            {
+            var credential = new ServiceAccountCredential(new ServiceAccountCredential.Initializer(serviceAccountEmail) {
                 Scopes = scopes
             }.FromCertificate(certificate));
 
             var service = new AndroidPublisherService(
-                new BaseClientService.Initializer
-                {
+                new BaseClientService.Initializer {
                     HttpClientInitializer = credential,
                     ApplicationName = "CodeSanook.AppRelease"
                 });
@@ -86,8 +79,7 @@ namespace CodeSanook.AppRelease.Services
             var latestApk = response.Apks.OrderByDescending(x => x.VersionCode).First();
             var latestIap = GetLatestAppRelease(bundleId);
 
-            latestAppReleaseInfo = new LatestAppReleaseInfo()
-            {
+            latestAppReleaseInfo = new LatestAppReleaseInfo() {
                 AndroidVersionCode = latestApk.VersionCode,
                 IOsVersionCode = latestIap?.VersionCode
             };
@@ -97,8 +89,7 @@ namespace CodeSanook.AppRelease.Services
             return latestAppReleaseInfo;
         }
 
-        public AppReleaseRecord GetLatestAppRelease(string bundleId)
-        {
+        public AppReleaseRecord GetLatestAppRelease(string bundleId) {
             var latestRelease = this.appReleaseRepository
                 //TODO database indexing on bundle id
                 .Fetch(r => r.AppInfo.BundleId == bundleId)
@@ -107,13 +98,11 @@ namespace CodeSanook.AppRelease.Services
             return latestRelease;
         }
 
-        public string GetManifest(string bundleId)
-        {
+        public string GetManifest(string bundleId) {
             var assembly = typeof(AppReleaseService).Assembly;
             var resourceName = $"{assembly.GetName().Name}.Data.manifest.plist";
             XDocument xmlDoc;
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
-            {
+            using (var stream = assembly.GetManifestResourceStream(resourceName)) {
                 xmlDoc = XDocument.Load(stream);
             }
 
@@ -140,8 +129,7 @@ namespace CodeSanook.AppRelease.Services
             titleValue.Value = latestRelease?.AppInfo?.Title;
 
             var builder = new StringBuilder();
-            using (var writer = new Utf8StringWriter(builder))
-            {
+            using (var writer = new Utf8StringWriter(builder)) {
                 xmlDoc.Save(writer);
             }
             return builder.ToString();

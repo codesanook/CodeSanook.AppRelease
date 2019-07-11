@@ -1,10 +1,8 @@
-using CodeSanook.AppRelease.Models;
+using Codesanook.AppRelease.Models;
 using Orchard;
 
-namespace CodeSanook.AppRelease.Services
-{
-    public interface IAppReleaseService : IDependency
-    {
+namespace Codesanook.AppRelease.Services {
+    public interface IAppReleaseService : IDependency {
         AppReleaseRecord GetLatestAppRelease(string bundleId);
         LatestAppReleaseInfo GetLatestAppReleaseInfo(string bundleId);
         string GetManifest(string bundleId);

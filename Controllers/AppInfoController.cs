@@ -1,20 +1,17 @@
-using CodeSanook.AppRelease.Models;
-using CodeSanook.AppRelease.ViewModels;
-using CodeSanook.Configuration.Models;
+using Codesanook.AppRelease.Models;
+using Codesanook.AppRelease.ViewModels;
+using Codesanook.Configuration.Models;
 using Orchard;
 using Orchard.ContentManagement;
 using Orchard.Data;
 using Orchard.Settings;
 using Orchard.UI.Admin;
-using System;
 using System.Linq;
 using System.Web.Mvc;
 
-namespace CodeSanook.AppRelease.Controllers
-{
+namespace Codesanook.AppRelease.Controllers {
     [Admin]
-    public class AppInfoController : Controller
-    {
+    public class AppInfoController : Controller {
         private readonly IOrchardServices orchardService;
         private readonly IRepository<AppInfoRecord> repository;
         private readonly ISiteService siteService;
@@ -22,15 +19,13 @@ namespace CodeSanook.AppRelease.Controllers
         public AppInfoController(
             IOrchardServices orchardService,
             IRepository<AppInfoRecord> appInfoRepository,
-            ISiteService siteService)
-        {
+            ISiteService siteService) {
             this.orchardService = orchardService;
             this.repository = appInfoRepository;
             this.siteService = siteService;
         }
 
-        public ActionResult Index(int? appInfoId)
-        {
+        public ActionResult Index(int? appInfoId) {
             var appInfoes = repository.Table
                 .OrderBy(a => a.Title)
                 .ToArray();
@@ -39,8 +34,7 @@ namespace CodeSanook.AppRelease.Controllers
                 ? appInfoes.SingleOrDefault(a => a.Id == appInfoId)
                 : appInfoes.FirstOrDefault();
 
-            var viewModel = new AppInfoIndexViewModel()
-            {
+            var viewModel = new AppInfoIndexViewModel() {
                 AppInfos = appInfoes,
                 AppReleases = GetAppReleasesForAppInfo(selectedAppInfo),
                 SelectedAppInfoId = selectedAppInfo?.Id,
@@ -50,11 +44,9 @@ namespace CodeSanook.AppRelease.Controllers
             return View(viewModel);
         }
 
-        private AppReleaseRecord[] GetAppReleasesForAppInfo(AppInfoRecord appInfo)
-        {
-            if (appInfo == null)
-            {
-                return Array.Empty<AppReleaseRecord>();
+        private AppReleaseRecord[] GetAppReleasesForAppInfo(AppInfoRecord appInfo) {
+            if (appInfo == null) {
+                return new AppReleaseRecord[0];
             }
 
             var releases = appInfo
@@ -64,23 +56,16 @@ namespace CodeSanook.AppRelease.Controllers
             return releases;
         }
 
-        public ActionResult Create()
-        {
-            return View();
-        }
+        public ActionResult Create() => View();
 
         [HttpPost]
-        public ActionResult Create(AppInfoRecord appInfo)
-        {
+        public ActionResult Create(AppInfoRecord appInfo) {
             appInfo.Title = appInfo.Title.Trim();
             appInfo.BundleId = appInfo.BundleId.Trim();
             this.repository.Create(appInfo);
             return RedirectToAction(nameof(Index), new { bundleId = appInfo.BundleId });
         }
 
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
+        public ActionResult Edit(int id) => View();
     }
 }

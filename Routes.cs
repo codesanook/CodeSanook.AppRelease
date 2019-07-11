@@ -2,12 +2,12 @@ using System.Collections.Generic;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Orchard.Mvc.Routes;
-using CodeSanook.Common.Modules;
-using CodeSanook.Common.Web;
-using CodeSanook.AppRelease.Controllers;
+using Codesanook.Common.Modules;
+using Codesanook.Common.Web;
+using Codesanook.AppRelease.Controllers;
 using System.Web.Http;
 
-namespace CodeSanook.AppRelease
+namespace Codesanook.AppRelease
 {
     public class Routes : IRouteProvider
     {

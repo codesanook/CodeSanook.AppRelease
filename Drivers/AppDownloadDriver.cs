@@ -1,6 +1,6 @@
-﻿using CodeSanook.AppRelease.Controllers;
-using CodeSanook.AppRelease.Models;
-using CodeSanook.Common.Web;
+﻿using Codesanook.AppRelease.Controllers;
+using Codesanook.AppRelease.Models;
+using Codesanook.Common.Web;
 using Orchard;
 using Orchard.ContentManagement;
 using Orchard.ContentManagement.Drivers;
@@ -11,13 +11,11 @@ using Orchard.UI.Notify;
 using System.Linq;
 using Orchard.Widgets.Models;
 using System.Web.Mvc;
-using CodeSanook.Common.Modules;
+using Codesanook.Common.Modules;
 using Orchard.Mvc.Extensions;
 
-namespace CodeSanook.AppRelease.Drivers
-{
-    public class AppDownloadDriver : ContentPartDriver<AppDownloadPart>
-    {
+namespace Codesanook.AppRelease.Drivers {
+    public class AppDownloadDriver : ContentPartDriver<AppDownloadPart> {
         private readonly IOrchardServices orchardService;
         private readonly IRepository<AppInfoRecord> appInfoRepository;
         private readonly ISiteService siteService;
@@ -30,8 +28,7 @@ namespace CodeSanook.AppRelease.Drivers
             IOrchardServices orchardService,
             IRepository<AppInfoRecord> appInfoRepository,
             ISiteService siteService,
-            IWorkContextAccessor workContextAccessor)
-        {
+            IWorkContextAccessor workContextAccessor) {
             this.orchardService = orchardService;
             this.appInfoRepository = appInfoRepository;
             this.siteService = siteService;
@@ -43,8 +40,7 @@ namespace CodeSanook.AppRelease.Drivers
         protected override DriverResult Display(
             AppDownloadPart part,
             string displayType,
-            dynamic shapeHelper)
-        {
+            dynamic shapeHelper) {
             var widgetPart = part.As<WidgetPart>();
             var title = widgetPart.Title;
 
@@ -61,16 +57,13 @@ namespace CodeSanook.AppRelease.Drivers
             );
         }
 
-        private string GetIOsUrl(AppDownloadPart part)
-        {
-            if (!part.IsEnterpriseApp)
-            {
+        private string GetIOsUrl(AppDownloadPart part) {
+            if (!part.IsEnterpriseApp) {
                 return part.AppStoreUrl;
             }
 
             var appInfo = this.appInfoRepository.Fetch(a => a.BundleId == part.BundleId).FirstOrDefault();
-            if (appInfo == null)
-            {
+            if (appInfo == null) {
                 this.orchardService.Notifier.Warning(T("Please create app info and release from admin panel."));
                 return null;
             }
@@ -81,20 +74,13 @@ namespace CodeSanook.AppRelease.Drivers
                 ? siteUrl
                 : string.Format("{0}://{1}", request.Url.Scheme, request.Url.Host);
 
-            var routeValues = new
-            {
+            var routeValues = new {
                 Area = ModuleHelper.GetModuleName<AppDownloadDriver>(),
                 bundleId = part.BundleId
             };
 
             var url = new UrlHelper(request.RequestContext);
-            //var downloadUrl = url.Action(
-            //      nameof(AppDownloadController.GetManifest),
-            //      MvcHelper.GetControllerName<AppDownloadController>(),
-            //      routeValues);
-
-
-            var downloadUrl= url.RouteUrl("AppDownload", new { bundleId = part.BundleId });
+            var downloadUrl = url.RouteUrl("AppDownload", new { bundleId = part.BundleId });
             var absoluteUrl = url.MakeAbsolute(downloadUrl, siteUrl);
             return $"itms-services://?action=download-manifest&url={absoluteUrl}";
         }
@@ -102,8 +88,7 @@ namespace CodeSanook.AppRelease.Drivers
         //GET for editing 
         protected override DriverResult Editor(
         AppDownloadPart part,
-        dynamic shapeHelper)
-        {
+        dynamic shapeHelper) {
             return ContentShape("Parts_AppDownload_Edit",
                 () => shapeHelper.EditorTemplate(
                     TemplateName: "Parts/AppDownload",
@@ -115,8 +100,7 @@ namespace CodeSanook.AppRelease.Drivers
         protected override DriverResult Editor(
             AppDownloadPart part,
             IUpdateModel updater,
-            dynamic shapeHelper)
-        {
+            dynamic shapeHelper) {
             updater.TryUpdateModel(part, Prefix, null, null);
             return Editor(part, shapeHelper);
         }

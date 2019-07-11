@@ -2,7 +2,7 @@ using Autofac;
 using System.Web.Http;
 using System.Web.Http.Cors;
 
-namespace CodeSanook.AppRelease
+namespace Codesanook.AppRelease
 {
     public class WebApiConfig : Module
     {

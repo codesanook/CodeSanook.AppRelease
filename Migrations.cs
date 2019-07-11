@@ -1,6 +1,6 @@
-using CodeSanook.AppRelease.Models;
+using Codesanook.AppRelease.Models;
 using Orchard.Data.Migration;
-using CodeSanook.Common.Data;
+using Codesanook.Common.Data;
 using System;
 using Orchard.ContentManagement.MetaData;
 using Orchard.Core.Contents.Extensions;
@@ -12,13 +12,11 @@ using Orchard.Localization;
 using Orchard.UI.Notify;
 using Orchard.Core.Common.Models;
 using Orchard.Security;
-using CodeSanook.AppRelease.Handlers;
+using Codesanook.AppRelease.Handlers;
 using Orchard.Settings;
 
-namespace CodeSanook.AppRelease
-{
-    public class Migrations : DataMigrationImpl
-    {
+namespace Codesanook.AppRelease {
+    public class Migrations : DataMigrationImpl {
         private readonly IContentManager contentManager;
         private readonly IWidgetsService widgetsService;
         private readonly IOrchardServices orchardService;
@@ -34,8 +32,7 @@ namespace CodeSanook.AppRelease
             IOrchardServices orchardService,
             IAppDownloadPartEventHandler appReleaseEventHandler,
             ISiteService siteService,
-            IMembershipService membershipService)
-        {
+            IMembershipService membershipService) {
             this.contentManager = contentManager;
             this.widgetsService = widgetsService;
             this.orchardService = orchardService;
@@ -45,8 +42,7 @@ namespace CodeSanook.AppRelease
             this.T = NullLocalizer.Instance;
         }
 
-        public int Create()
-        {
+        public int Create() {
             SchemaBuilder.CreateTable<AppInfoRecord>(tableConfig => tableConfig
                 .Column<AppInfoRecord, int>(table => table.Id, column => column.PrimaryKey().Identity())
                 .Column<AppInfoRecord, string>(table => table.Title)
@@ -82,8 +78,7 @@ namespace CodeSanook.AppRelease
                 .AsWidgetWithIdentity());
 
             var layer = widgetsService.GetLayers().FirstOrDefault(x => x.Name == "Default");
-            if (layer == null)
-            {
+            if (layer == null) {
                 orchardService.Notifier.Warning(T("AppDownloadWidget could not be created because no 'Default' layer. Please create it manually."));
                 return 1;
             }

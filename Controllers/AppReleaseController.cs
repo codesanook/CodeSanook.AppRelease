@@ -1,10 +1,10 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using CodeSanook.AppRelease.Models;
-using CodeSanook.AppRelease.ViewModels;
-using CodeSanook.Common.Web;
-using CodeSanook.Configuration;
-using CodeSanook.Configuration.Models;
+using Codesanook.AppRelease.Models;
+using Codesanook.AppRelease.ViewModels;
+using Codesanook.Common.Web;
+using Codesanook.Configuration;
+using Codesanook.Configuration.Models;
 using Orchard;
 using Orchard.Caching.Services;
 using Orchard.ContentManagement;
@@ -22,11 +22,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 
-namespace CodeSanook.AppRelease.Controllers
-{
+namespace Codesanook.AppRelease.Controllers {
     [Admin]
-    public class AppReleaseController : Controller
-    {
+    public class AppReleaseController : Controller {
         const string rootFolder = "app-releases";
         private static Regex versionNumberPattern = new Regex(@"^(?<major>\d+)\.(?<minor>\d{1,2})\.(?<patch>\d{1,2})$", RegexOptions.Compiled);
         private static Regex replaceTitleNamePattern = new Regex(@"[\s\.]+", RegexOptions.Compiled);
@@ -51,8 +49,7 @@ namespace CodeSanook.AppRelease.Controllers
             IRepository<AppReleaseRecord> appReleaseRepository,
             IOrchardServices orchardService,
             ISiteService siteService,
-            ICacheService cacheService)
-        {
+            ICacheService cacheService) {
             this.appInfoRepository = appInfoRepository;
             this.appReleaseRepository = appReleaseRepository;
             this.orchardService = orchardService;
@@ -63,23 +60,19 @@ namespace CodeSanook.AppRelease.Controllers
             this.cacheService = cacheService;
         }
 
-        public ActionResult Index()
-        {
+        public ActionResult Index() {
             ViewBag.Setting = this.setting;
             var items = this.appReleaseRepository.Table.OrderByDescending(i => i.VersionCode).ToArray();
             return View(items);
         }
 
-        public ActionResult Create(int? appInfoId)
-        {
-            if (!appInfoId.HasValue)
-            {
+        public ActionResult Create(int? appInfoId) {
+            if (!appInfoId.HasValue) {
                 this.orchardService.Notifier.Error(T("No selected app for creating a new release."));
                 return RedirectToAction(nameof(AppInfoController.Index), MvcHelper.GetControllerName<AppInfoController>());
             }
 
-            var viewModel = new AppReleaseCreateViewModel()
-            {
+            var viewModel = new AppReleaseCreateViewModel() {
                 AppInfoId = appInfoId.Value
             };
 
@@ -88,17 +81,14 @@ namespace CodeSanook.AppRelease.Controllers
 
         [ValidateAntiForgeryTokenOrchard(true)]
         [HttpPost]
-        public async Task<ActionResult> Create(AppReleaseCreateViewModel viewModel)
-        {
+        public async Task<ActionResult> Create(AppReleaseCreateViewModel viewModel) {
             //TODO move logic to ApReleaseService
-            if (!this.ModelState.IsValid)
-            {
+            if (!this.ModelState.IsValid) {
                 return View(viewModel);
             }
 
             var match = versionNumberPattern.Match(viewModel.VersionNumber);
-            if (!match.Success)
-            {
+            if (!match.Success) {
                 this.orchardService.Notifier.Error(
                     T($"Version number {viewModel.VersionNumber} is invalid, it must be major.minor.patch pattern."));
                 return View(viewModel);
@@ -113,16 +103,14 @@ namespace CodeSanook.AppRelease.Controllers
             var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
             var fileKey = CreateFileKey(viewModel, appInfo);
             using (var client = S3Helper.GetS3Client(this.setting))
-            using (var inputStream = viewModel.File.InputStream)
-            {
+            using (var inputStream = viewModel.File.InputStream) {
                 //var fileTransferUtility = new TransferUtility(client);
                 // await fileTransferUtility.UploadAsync(uploadRequest);
                 var putObjectRequest = CreateFileUploadRequest(inputStream, fileKey);
                 await client.PutObjectAsync(putObjectRequest);
             }
 
-            var appRelease = new AppReleaseRecord()
-            {
+            var appRelease = new AppReleaseRecord() {
                 VersionNumber = viewModel.VersionNumber,
                 VersionCode = versionCode,
                 CreatedUtc = DateTime.UtcNow,
@@ -139,8 +127,7 @@ namespace CodeSanook.AppRelease.Controllers
             return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
         }
 
-        private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo)
-        {
+        private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo) {
             var now = DateTime.UtcNow;
             var folder = $"{rootFolder}/{now:yyyy}/{now:MM}/{now:dd}/{now:HH}/{now:mm}/{now:ss}";
 
@@ -149,17 +136,14 @@ namespace CodeSanook.AppRelease.Controllers
             return string.Format("{0}/{1}", folder, fileName).ToLower();
         }
 
-        private PutObjectRequest CreateFileUploadRequest(Stream inputStream, string key)
-        {
-            var request = new PutObjectRequest()
-            {
+        private PutObjectRequest CreateFileUploadRequest(Stream inputStream, string key) {
+            var request = new PutObjectRequest() {
                 BucketName = setting.AwsS3BucketName,
                 Key = key,
                 InputStream = inputStream,
                 CannedACL = S3CannedACL.PublicRead,
                 ContentType = "application/octet-stream"
             };
-
             return request;
         }
     }

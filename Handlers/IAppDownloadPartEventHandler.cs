@@ -1,7 +1,7 @@
-﻿using CodeSanook.AppRelease.Models;
+﻿using Codesanook.AppRelease.Models;
 using Orchard.Events;
 
-namespace CodeSanook.AppRelease.Handlers
+namespace Codesanook.AppRelease.Handlers
 {
     public interface IAppDownloadPartEventHandler:IEventHandler
     {

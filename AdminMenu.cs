@@ -1,18 +1,15 @@
-﻿using CodeSanook.AppRelease.Controllers;
-using CodeSanook.Common.Modules;
-using CodeSanook.Common.Web;
+﻿using Codesanook.AppRelease.Controllers;
+using Codesanook.Common.Modules;
+using Codesanook.Common.Web;
 using Orchard.Localization;
 using Orchard.UI.Navigation;
 
-namespace CodeSanook.Swagger
-{
-    public class AdminMenu : INavigationProvider
-    {
+namespace Codesanook.Swagger {
+    public class AdminMenu : INavigationProvider {
         public Localizer T { get; set; }
         public string MenuName => "admin";
 
-        public void GetNavigation(NavigationBuilder builder)
-        {
+        public void GetNavigation(NavigationBuilder builder) {
             builder
                 .Add(item => item
                     .Caption(T("App Release"))

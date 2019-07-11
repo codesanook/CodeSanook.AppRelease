@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace CodeSanook.AppRelease
+namespace Codesanook.AppRelease
 {
     public class ResourceRegistration : IResourceManifestProvider
     {

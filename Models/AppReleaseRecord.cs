@@ -1,9 +1,7 @@
 using System;
 
-namespace CodeSanook.AppRelease.Models
-{
-    public class AppReleaseRecord
-    {
+namespace Codesanook.AppRelease.Models {
+    public class AppReleaseRecord {
         public virtual int Id { get; set; }
         public virtual string VersionNumber { get; set; }
         public virtual int VersionCode { get; set; }
