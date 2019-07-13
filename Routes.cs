@@ -7,22 +7,17 @@ using Codesanook.Common.Web;
 using Codesanook.AppRelease.Controllers;
 using System.Web.Http;
 
-namespace Codesanook.AppRelease
-{
-    public class Routes : IRouteProvider
-    {
+namespace Codesanook.AppRelease {
+    public class Routes : IRouteProvider {
         private static string moduleName = ModuleHelper.GetModuleName<Routes>();
 
-        public void GetRoutes(ICollection<RouteDescriptor> routes)
-        {
-            foreach (var routeDescriptor in GetRoutes())
-            {
+        public void GetRoutes(ICollection<RouteDescriptor> routes) {
+            foreach (var routeDescriptor in GetRoutes()) {
                 routes.Add(routeDescriptor);
             }
         }
 
-        public IEnumerable<RouteDescriptor> GetRoutes()
-        {
+        public IEnumerable<RouteDescriptor> GetRoutes() {
             return new[]
             {
                 new RouteDescriptor
@@ -55,8 +50,7 @@ namespace Codesanook.AppRelease
                         id = RouteParameter.Optional
                     },
                 }
-
         };
+        }
     }
-}
 }

@@ -1,7 +1,7 @@
-﻿Name: CodeSanook.AppRelease
+﻿Name: Codesanook.AppRelease
 AntiForgery: enabled
-Author: Aaron
-Website: http://codesanook.com
+Author: Codesanook Team
+Website: https://www.codesanook.com
 Version: 1.0
 OrchardVersion: 1.0
 Description: Description for the module

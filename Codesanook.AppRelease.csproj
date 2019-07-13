@@ -90,8 +90,8 @@
       <HintPath>..\..\..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations">
@@ -164,7 +164,6 @@
     <Compile Include="Models\AppDownloadPartRecord.cs" />
     <Compile Include="Models\AppInfoRecord.cs" />
     <Compile Include="Models\AppReleaseRecord.cs" />
-    <Compile Include="ResourceRegistration.cs" />
     <Compile Include="ViewModels\AppReleaseCreateViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Routes.cs" />
@@ -177,7 +176,6 @@
     <Content Include="packages.config" />
     <Content Include="Styles\style.css" />
     <Content Include="Web.config" />
-    <Content Include="Scripts\Web.config" />
     <Content Include="Styles\Web.config" />
     <Content Include="Module.txt" />
   </ItemGroup>
@@ -196,9 +194,9 @@
       <Project>{7104E4B7-0FDC-4734-A812-1C6A8F71635D}</Project>
       <Name>CodeSanook.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\CodeSanook.Configuration\CodeSanook.Configuration.csproj">
-      <Project>{55A5AF31-438D-4712-B8B6-EE01327842AE}</Project>
-      <Name>CodeSanook.Configuration</Name>
+    <ProjectReference Include="..\Codesanook.Configuration\Codesanook.Configuration.csproj">
+      <Project>{55a5af31-438d-4712-b8b6-ee01327842ae}</Project>
+      <Name>Codesanook.Configuration</Name>
     </ProjectReference>
     <ProjectReference Include="..\Orchard.Caching\Orchard.Caching.csproj">
       <Project>{7528BF74-25C7-4ABE-883A-443B4EEC4776}</Project>
