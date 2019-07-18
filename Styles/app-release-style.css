@@ -1,0 +1,19 @@
+﻿/*Use BEM convention*/
+.download-link {
+    text-align: center;
+}
+
+    .download-link .title {
+        font-weight: bold;
+    }
+
+    .download-link .platform {
+        display: inline-block;
+        margin: 7px 20px;
+        width: 100%;
+        max-width: 160px;
+    }
+
+    .download-link .store-image {
+        width: 100%;
+    }

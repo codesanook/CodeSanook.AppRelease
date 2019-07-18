@@ -1,16 +1,16 @@
 ﻿@using Codesanook.Common.Web
 @{
-    //Register if style.css is in Styles folder
-    Style.Include("style.css").AtHead();
+    //Register a style file in Styles folder
+    Style.Include("app-release-style.css").AtHead();
     var imageBaseUrl = this.GetUrlPathRelativeToModule("Content/Images");
 }
 
 <div class="download-link">
-    <div>Download Thailand FLS Application</div>
-    <a class="download-link__platform" href="@Model.AndroidUrl">
-        <img src="@this.Combine(imageBaseUrl, "download-play-store.png")">
+    <h2 class="title">Download Thailand FLS Application</h2>
+    <a class="platform" href="@Model.AndroidUrl">
+        <img class="store-image" src="@this.Combine(imageBaseUrl, "download-play-store.png")">
     </a>
-    <a class="download-link__platform" href="@Model.IOSUrl">
-        <img src="@this.Combine(imageBaseUrl, "download-app.png")">
+    <a class="platform" href="@Model.IOSUrl">
+        <img class="store-image" src="@this.Combine(imageBaseUrl, "download-app.png")">
     </a>
 </div>
