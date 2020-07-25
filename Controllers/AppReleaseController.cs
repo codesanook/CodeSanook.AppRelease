@@ -1,10 +1,11 @@
 using Amazon.S3;
 using Amazon.S3.Model;
+using Codesanook.AmazonS3.Models;
+using Codesanook.AmazonS3.Services;
 using Codesanook.AppRelease.Models;
 using Codesanook.AppRelease.ViewModels;
+using Codesanook.Common.Models;
 using Codesanook.Common.Web;
-using Codesanook.Configuration;
-using Codesanook.Configuration.Models;
 using Orchard;
 using Orchard.Caching.Services;
 using Orchard.ContentManagement;
@@ -26,19 +27,21 @@ namespace Codesanook.AppRelease.Controllers {
     [Admin]
     public class AppReleaseController : Controller {
         const string rootFolder = "app-releases";
-        private static Regex versionNumberPattern = new Regex(@"^(?<major>\d+)\.(?<minor>\d{1,2})\.(?<patch>\d{1,2})$", RegexOptions.Compiled);
-        private static Regex replaceTitleNamePattern = new Regex(@"[\s\.]+", RegexOptions.Compiled);
-        private ICacheService cacheService;
+        private static readonly Regex versionNumberPattern = new Regex(@"^(?<major>\d+)\.(?<minor>\d{1,2})\.(?<patch>\d{1,2})$", RegexOptions.Compiled);
+        private static readonly Regex replaceTitleNamePattern = new Regex(@"[\s\.]+", RegexOptions.Compiled);
+        private readonly ICacheService cacheService;
+        private readonly IAmazonS3 amazonS3Client;
 
-        //https://semver.org/
-        //MAJOR version when you make incompatible API changes,
-        //MINOR version when you add functionality in a backwards-compatible manner, and
-        //PATCH version when you make backwards-compatible bug fixes.
+        // https://semver.org/
+        // MAJOR version when you make incompatible API changes,
+        // MINOR version when you add functionality in a backwards-compatible manner, and
+        // PATCH version when you make backwards-compatible bug fixes.
         private readonly IRepository<AppInfoRecord> appInfoRepository;
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly IOrchardServices orchardService;
         private readonly ISiteService siteService;
-        private readonly ModuleSettingPart setting;
+        private readonly CommonSettingPart commonSettingPart;
+        private readonly AwsS3SettingPart awsS3SettingPart;
 
         //property injection
         public ILogger Logger { get; set; }
@@ -49,26 +52,24 @@ namespace Codesanook.AppRelease.Controllers {
             IRepository<AppReleaseRecord> appReleaseRepository,
             IOrchardServices orchardService,
             ISiteService siteService,
-            ICacheService cacheService) {
+            ICacheService cacheService,
+            IAmazonS3 amazonS3Client
+        ) {
             this.appInfoRepository = appInfoRepository;
             this.appReleaseRepository = appReleaseRepository;
             this.orchardService = orchardService;
             this.siteService = siteService;
-            this.T = NullLocalizer.Instance;
-            this.Logger = NullLogger.Instance;
-            setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
+            T = NullLocalizer.Instance;
+            Logger = NullLogger.Instance;
             this.cacheService = cacheService;
-        }
-
-        public ActionResult Index() {
-            ViewBag.Setting = this.setting;
-            var items = this.appReleaseRepository.Table.OrderByDescending(i => i.VersionCode).ToArray();
-            return View(items);
+            this.amazonS3Client = amazonS3Client;
+            commonSettingPart = this.siteService.GetSiteSettings().As<CommonSettingPart>();
+            awsS3SettingPart = this.siteService.GetSiteSettings().As<AwsS3SettingPart>();
         }
 
         public ActionResult Create(int? appInfoId) {
             if (!appInfoId.HasValue) {
-                this.orchardService.Notifier.Error(T("No selected app for creating a new release."));
+                this.orchardService.Notifier.Error(T("No selected App for creating a new release."));
                 return RedirectToAction(nameof(AppInfoController.Index), MvcHelper.GetControllerName<AppInfoController>());
             }
 
@@ -83,13 +84,13 @@ namespace Codesanook.AppRelease.Controllers {
         [HttpPost]
         public async Task<ActionResult> Create(AppReleaseCreateViewModel viewModel) {
             //TODO move logic to ApReleaseService
-            if (!this.ModelState.IsValid) {
+            if (!ModelState.IsValid) {
                 return View(viewModel);
             }
 
             var match = versionNumberPattern.Match(viewModel.VersionNumber);
             if (!match.Success) {
-                this.orchardService.Notifier.Error(
+                orchardService.Notifier.Error(
                     T($"Version number {viewModel.VersionNumber} is invalid, it must be major.minor.patch pattern."));
                 return View(viewModel);
             }
@@ -102,12 +103,12 @@ namespace Codesanook.AppRelease.Controllers {
             //TODO prevent existing version
             var appInfo = this.appInfoRepository.Get(viewModel.AppInfoId);
             var fileKey = CreateFileKey(viewModel, appInfo);
-            using (var client = S3Helper.GetS3Client(this.setting))
+            using (amazonS3Client)
             using (var inputStream = viewModel.File.InputStream) {
                 //var fileTransferUtility = new TransferUtility(client);
-                // await fileTransferUtility.UploadAsync(uploadRequest);
+                //await fileTransferUtility.UploadAsync(uploadRequest);
                 var putObjectRequest = CreateFileUploadRequest(inputStream, fileKey);
-                await client.PutObjectAsync(putObjectRequest);
+                await amazonS3Client.PutObjectAsync(putObjectRequest);
             }
 
             var appRelease = new AppReleaseRecord() {
@@ -118,13 +119,13 @@ namespace Codesanook.AppRelease.Controllers {
                 AppInfo = new AppInfoRecord() { Id = viewModel.AppInfoId }
             };
 
-            this.appReleaseRepository.Create(appRelease);
+            appReleaseRepository.Create(appRelease);
 
             //Remove existing cache after a new release
-            this.cacheService.Remove(LatestAppReleaseInfo.CacheKey);
+            cacheService.Remove(LatestAppReleaseInfo.CacheKey);
 
-            this.orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
-            return RedirectToAction(nameof(Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
+            orchardService.Notifier.Add(NotifyType.Success, T("New release created successfully."));
+            return RedirectToAction(nameof(AppInfoController.Index), MvcHelper.GetControllerName<AppInfoController>(), new { appInfoId = appRelease.AppInfo.Id });
         }
 
         private string CreateFileKey(AppReleaseCreateViewModel viewModel, AppInfoRecord appInfo) {
@@ -138,7 +139,7 @@ namespace Codesanook.AppRelease.Controllers {
 
         private PutObjectRequest CreateFileUploadRequest(Stream inputStream, string key) {
             var request = new PutObjectRequest() {
-                BucketName = setting.AwsS3BucketName,
+                BucketName = awsS3SettingPart.AwsS3BucketName,
                 Key = key,
                 InputStream = inputStream,
                 CannedACL = S3CannedACL.PublicRead,
@@ -148,3 +149,4 @@ namespace Codesanook.AppRelease.Controllers {
         }
     }
 }
+

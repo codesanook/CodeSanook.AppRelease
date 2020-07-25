@@ -1,6 +1,6 @@
+using Codesanook.AmazonS3.Models;
 using Codesanook.AppRelease.Models;
 using Codesanook.AppRelease.ViewModels;
-using Codesanook.Configuration.Models;
 using Orchard;
 using Orchard.ContentManagement;
 using Orchard.Data;
@@ -38,7 +38,7 @@ namespace Codesanook.AppRelease.Controllers {
                 AppInfos = appInfoes,
                 AppReleases = GetAppReleasesForAppInfo(selectedAppInfo),
                 SelectedAppInfoId = selectedAppInfo?.Id,
-                Setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>()
+                Setting = this.siteService.GetSiteSettings().As<AwsS3SettingPart>()
             };
 
             return View(viewModel);

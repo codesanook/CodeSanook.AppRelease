@@ -1,5 +1,6 @@
+using Codesanook.AmazonS3.Models;
 using Codesanook.AppRelease.Models;
-using Codesanook.Configuration.Models;
+using Codesanook.Common.Models;
 using Google.Apis.AndroidPublisher.v3;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
@@ -20,9 +21,12 @@ namespace Codesanook.AppRelease.Services {
         private readonly IRepository<AppReleaseRecord> appReleaseRepository;
         private readonly ISiteService siteService;
         private readonly ICacheService cacheService;
-        private readonly ModuleSettingPart setting;
+        private readonly CommonSettingPart commonSettingPart;
+        private readonly AwsS3SettingPart awsS3SettingPart;
 
-        private string[] scopes = new string[] { AndroidPublisherService.Scope.Androidpublisher }; // view and manage your Google Analytics data
+        private readonly string[] scopes = new string[] {
+            AndroidPublisherService.Scope.Androidpublisher
+        }; // view and manage your Google Analytics data
 
         //property injection
         public ILogger Logger { get; set; }
@@ -38,7 +42,8 @@ namespace Codesanook.AppRelease.Services {
             this.cacheService = cacheService;
             this.T = NullLocalizer.Instance;
             this.Logger = NullLogger.Instance;
-            setting = this.siteService.GetSiteSettings().As<ModuleSettingPart>();
+            commonSettingPart = this.siteService.GetSiteSettings().As<CommonSettingPart>();
+            awsS3SettingPart = this.siteService.GetSiteSettings().As<AwsS3SettingPart>();
         }
 
         public LatestAppReleaseInfo GetLatestAppReleaseInfo(string bundleId) {
@@ -48,7 +53,7 @@ namespace Codesanook.AppRelease.Services {
             }
 
             //Get p12 key from https://console.developers.google.com
-            var data = Convert.FromBase64String(setting.GoogleServiceAccountP12Key);
+            var data = Convert.FromBase64String(commonSettingPart.GoogleServiceAccountP12Key);
 
             //TODO move to configuration before publish this module
             var serviceAccountEmail = "google-play-api@thailand-fls-app.iam.gserviceaccount.com";  // found https://console.developers.google.com
@@ -113,7 +118,7 @@ namespace Codesanook.AppRelease.Services {
             var urlValue = urlKey.NextNode as XElement;
 
             var latestRelease = GetLatestAppRelease(bundleId);
-            var url = Flurl.Url.Combine(setting.AwsS3PublicUrl, latestRelease?.FileKey);
+            var url = Flurl.Url.Combine(awsS3SettingPart.AwsS3PublicUrl, latestRelease?.FileKey);
             urlValue.Value = url;
 
             var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
