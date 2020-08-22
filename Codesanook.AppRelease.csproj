@@ -190,9 +190,9 @@
       <Name>Orchard.Core</Name>
       <Private>$(MvcBuildViews)</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Codesanook.AmazonS3\CodeSanook.AmazonS3.csproj">
+    <ProjectReference Include="..\Codesanook.AmazonS3\Codesanook.AmazonS3.csproj">
       <Project>{F7A05B63-9397-4C6A-B625-EDD5D0D55675}</Project>
-      <Name>CodeSanook.AmazonS3</Name>
+      <Name>Codesanook.AmazonS3</Name>
     </ProjectReference>
     <ProjectReference Include="..\Codesanook.Common\Codesanook.Common.csproj">
       <Project>{7104E4B7-0FDC-4734-A812-1C6A8F71635D}</Project>
