@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Xml.Linq;
+using UrlHelper = Flurl.Url;
 
 namespace Codesanook.AppRelease.Services {
     public class AppReleaseService : IAppReleaseService {
@@ -118,8 +119,12 @@ namespace Codesanook.AppRelease.Services {
             var urlValue = urlKey.NextNode as XElement;
 
             var latestRelease = GetLatestAppRelease(bundleId);
-            var url = Flurl.Url.Combine(awsS3SettingPart.AwsS3PublicUrl, latestRelease?.FileKey);
-            urlValue.Value = url;
+
+            var rootUrl = awsS3SettingPart.MapSubdomainToBucketName
+                ? new UriBuilder("https", awsS3SettingPart.AwsS3BucketName).ToString()
+                : awsS3SettingPart.AwsS3ServiceUrl;
+
+            urlValue.Value = new UrlHelper(rootUrl).AppendPathSegments(latestRelease?.FileKey).ToString();
 
             var bundleIdKey = allKeys.Single(e => e.Value == "bundle-identifier");
             var bundleIdValue = bundleIdKey.NextNode as XElement;
